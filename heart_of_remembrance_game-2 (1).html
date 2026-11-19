@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#170d2b">
+<title>The Heart of Remembrance</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#170d2b;color:#fff;font-family:Trebuchet MS,Arial,sans-serif}body{display:flex;min-height:100vh;min-height:100dvh;align-items:center;justify-content:center;padding:clamp(6px,2vw,14px);overscroll-behavior:none}button{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.wrap{width:min(100%,1000px)}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 10px}
+h1{font-size:clamp(22px,4vw,34px);margin:0;color:#ffbd42;text-shadow:2px 3px #7b235c}.stats{display:flex;gap:9px;flex-wrap:wrap}.pill{background:#321943;border:2px solid #a64b87;border-radius:20px;padding:7px 13px;font-weight:bold}
+.stage{position:relative;border:4px solid #ffbd42;border-radius:16px;overflow:hidden;box-shadow:0 0 30px #ff7b3555;background:#140d2d}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:pixelated;touch-action:none}
+.hud{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 2px;color:#f8d9b8;font-size:14px}
+.controls{display:flex;gap:8px;justify-content:center;margin-top:10px}.controls button,.restart{border:0;border-radius:12px;background:#f28b32;color:#27102e;font-size:18px;font-weight:bold;padding:12px 20px;box-shadow:0 4px #9d3f35;touch-action:manipulation}.controls button:active,.restart:active{transform:translateY(3px);box-shadow:0 1px #9d3f35}
+.overlay{position:absolute;inset:0;background:#140b25df;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}.panel{max-width:520px}.panel h2{font-size:clamp(25px,5vw,42px);color:#ffbd42;margin:0 0 8px}.panel p{line-height:1.5;color:#ffe7d1}.panel h2{animation:glow 1.5s infinite alternate}@keyframes glow{from{text-shadow:0 0 5px #ffbd42}to{text-shadow:0 0 22px #ff4d83,0 0 34px #ffbd42}}.restart{font-size:17px;margin-top:8px;cursor:pointer}
+.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px auto;max-width:440px}
+.choice{background:#39204f;color:#fff;border:2px solid #d68b58;border-radius:12px;padding:10px 8px;font-weight:bold;cursor:pointer}
+.choice.active{background:#a94c69;border-color:#ffd45e;box-shadow:0 0 12px #ffbd42}
+.choice small{display:block;color:#ffe2c5;font-weight:normal;margin-top:4px}
+.controls #dash{background:#48c6a2}
+@media(min-width:800px) and (pointer:fine){.controls{display:none}}
+@media(max-width:799px){
+ body{align-items:flex-start;padding:7px}
+ .wrap{width:100%;max-width:1000px;margin:auto}
+ .top{margin-bottom:6px;gap:6px}
+ h1{font-size:clamp(17px,4.5vw,26px)}
+ .stats{gap:5px}.pill{font-size:13px;padding:5px 9px}
+ .stage{border-width:2px;border-radius:10px}
+ .hud{font-size:11px;margin:6px 2px}
+ .controls{display:flex;gap:clamp(7px,2vw,14px);margin-top:9px;padding-bottom:env(safe-area-inset-bottom)}
+ .controls button{flex:1;max-width:160px;min-height:58px;padding:12px 8px;font-size:clamp(16px,4vw,20px);border-radius:15px;touch-action:none}
+ .overlay{padding:10px;overflow-y:auto}.panel{max-height:100%;overflow-y:auto}
+ .panel h2{font-size:clamp(22px,6vw,34px)}
+ .panel p{font-size:clamp(12px,3vw,15px);margin:7px 0}
+ .choice-grid{gap:6px;margin:8px auto}.choice{padding:8px 5px;font-size:13px}.choice small{font-size:11px}
+ .restart{padding:10px 15px;font-size:15px;margin-top:5px}
+}
+@media(max-height:560px) and (orientation:landscape){
+ body{padding:4px}.wrap{max-width:calc(100vh * 1.65)}
+ .top{margin-bottom:3px}.hud{margin:3px 2px}.controls{margin-top:4px}
+ .controls button{min-height:44px;padding:6px}.overlay{padding:5px}
+ .panel h2{font-size:22px}.panel p{font-size:11px;line-height:1.25;margin:4px 0}
+ .choice-grid{margin:5px auto}.choice{padding:5px;font-size:11px}.choice small{font-size:9px}
+ .restart{padding:6px 12px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="top"><h1>🌼 THE HEART OF REMEMBRANCE</h1><div class="stats"><div class="pill">🌼 <span id="flowers">0</span>/18</div><div class="pill">❤️ <span id="lives">3</span></div><div class="pill">🏁 <span id="level">1</span>/3</div></div></div>
+ <div class="stage">
+  <canvas id="game" width="960" height="540" aria-label="Platform game"></canvas>
+  <div class="overlay" id="overlay"><div class="panel" id="menuPanel">
+   <h2>¡Choose Your Hero!</h2>
+   <p>Pick a character for your journey through three magical worlds.</p>
+   <div class="choice-grid">
+    <button class="choice active" data-character="catrin">💀 Catrín<small>Balanced adventurer</small></button>
+    <button class="choice" data-character="mariachi">🎺 Mariachi<small>Extra dash power</small></button>
+    <button class="choice" data-character="alebrije">🦋 Alebrije<small>Higher jumps</small></button>
+    <button class="choice" data-character="friend">🌺 Spirit Friend<small>Starts with an extra life</small></button>
+   </div>
+   <p><b>Move:</b> ← → or A / D &nbsp; <b>Jump:</b> Space / ↑ / W<br><b>Dash:</b> X or SHIFT &nbsp; <b>Costume:</b> C</p>
+   <button class="restart" id="start">START ADVENTURE</button>
+  </div></div>
+ </div>
+ <div class="hud"><span>Tip: X/SHIFT = dash • C = switch costume • secret arches hide shortcuts • gold flowers = +5!</span><span>Keyboard: ← → + SPACE</span></div>
+ <div class="controls"><button id="left">◀</button><button id="jump">JUMP ⤒</button><button id="dash">DASH ⚡</button><button id="right">▶</button></div>
+</div>
+<script>
+(()=>{
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+const W=960,H=540, flowersEl=document.getElementById('flowers'),livesEl=document.getElementById('lives'),levelEl=document.getElementById('level'),overlay=document.getElementById('overlay');
+let keys={},touch={left:false,right:false},camera=0,flowers=0,lives=3,level=1,playing=false,won=false,frame=0;
+const player={x:55,y:350,vx:0,vy:0,w:30,h:45,on:false,jumps:0,inv:0};
+const worlds=[
+ {end:2700, platforms:[[0,465,400],[510,420,150],[735,465,220],[1040,405,150],[1260,455,210],[1570,400,160],[1805,455,180],[2070,410,160],[2310,465,390]],hills:[[400,510,110],[950,1040,85],[1470,1570,105],[1985,2070,80]],flowers:[[180,420],[300,420],[565,375],[790,420],[1110,360],[1320,410],[1640,355],[1860,410],[2140,365],[2380,420]],hazards:[[650,390],[1160,370],[1740,410],[2240,420]]},
+ {end:3100,platforms:[[0,465,300],[410,420,130],[630,465,170],[900,390,145],[1130,445,140],[1360,385,160],[1600,455,160],[1840,400,150],[2070,460,150],[2310,390,150],[2540,455,560]],hills:[[300,410,95],[800,900,90],[1270,1360,115],[1760,1840,90],[2220,2310,110]],flowers:[[130,420],[465,375],[690,420],[955,345],[1180,400],[1415,340],[1660,410],[1900,355],[2130,415],[2380,345],[2700,410]],hazards:[[550,390],[1030,350],[1510,345],[1990,355],[2450,410]]},
+ {end:3500,platforms:[[0,465,260],[370,410,120],[570,455,130],[790,380,130],[1010,450,120],[1220,385,130],[1450,455,130],[1670,370,140],[1900,445,130],[2130,365,130],[2360,445,130],[2590,380,130],[2820,455,680]],hills:[[260,370,105],[700,790,95],[1140,1220,100],[1580,1670,110],[2040,2130,100],[2490,2590,115]],flowers:[[95,420],[420,365],[620,410],[835,335],[1050,405],[1265,340],[1495,410],[1720,325],[1945,400],[2180,320],[2410,400],[2640,335],[2950,410],[3180,410]],hazards:[[490,385],[920,335],[1380,345],[1810,325],[2270,320],[2740,410]]}
+];
+let collected=new Set(),hazardPhase=0;
+let chaser={x:-80,y:0};
+let falling=[],selectedCharacter='catrin',dashTimer=0,dashCooldown=0,bonusLives=0;
+let movingPlatforms=[],boss={x:0,hp:3,active:false,shot:0},fireworks=[];
+const characterNames={catrin:'Catrín',mariachi:'Mariachi',alebrije:'Alebrije',friend:'Spirit Friend'};
+document.querySelectorAll('.choice').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.choice').forEach(b=>b.classList.remove('active'));
+ btn.classList.add('active');selectedCharacter=btn.dataset.character;
+}));
+function world(){return worlds[level-1]}
+function resetPlayer(){player.x=55;player.y=370;player.vx=player.vy=0;player.jumps=0;camera=0;player.inv=90;chaser.x=player.x-230;falling=[];dashTimer=0;dashCooldown=0}
+function initLevel(){movingPlatforms=[];let base=level===1?850:level===2?1050:1250;for(let i=0;i<3+level;i++)movingPlatforms.push({x:base+i*260,y:level===1?320:level===2?300:280,w:95,baseY:level===1?320:level===2?300:280,phase:i*1.7});boss={x:world().end-330,hp:3,active:level===2,shot:0};}
+function newGame(){flowers=0;lives=selectedCharacter==='friend'?4:3;bonusLives=0;level=1;collected.clear();resetPlayer();initLevel();playing=true;won=false;fireworks=[];overlay.style.display='none';updateHud()}
+function updateHud(){flowersEl.textContent=flowers;livesEl.textContent=lives;levelEl.textContent=level}
+function jump(){if(!playing)return;let boost=selectedCharacter==='alebrije'?1.18:1;if(player.jumps<2){player.vy=(player.jumps===0?-12.8:-10.5)*boost;player.jumps++;player.on=false}}
+function activateDash(){if(!playing||dashCooldown>0)return;dashTimer=12;dashCooldown=95;player.inv=Math.max(player.inv,14)}
+function bindHold(id,prop){
+ const el=document.getElementById(id);
+ el.addEventListener('pointerdown',e=>{e.preventDefault();touch[prop]=true;try{el.setPointerCapture(e.pointerId)}catch(_){}});
+ const release=e=>{touch[prop]=false;if(e&&e.preventDefault)e.preventDefault()};
+ ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,release));
+}
+bindHold('left','left');bindHold('right','right');document.getElementById('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+document.getElementById('start').onclick=newGame;
+document.getElementById('dash').addEventListener('pointerdown',e=>{e.preventDefault();activateDash()});
+window.addEventListener('keydown',e=>{
+ const k=e.key.toLowerCase();keys[k]=true;
+ if([' ','arrowup','w'].includes(k)){e.preventDefault();if(!e.repeat)jump()}
+ if((k==='x'||k==='shift')&&!e.repeat)activateDash();
+ if(k==='c'&&!e.repeat){selectedCharacter=selectedCharacter==='mariachi'?'catrin':'mariachi'}
+});
+window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+window.addEventListener('blur',()=>{keys={};touch.left=false;touch.right=false});
+function hillY(x,h){return h[2]*(1-Math.pow((x-(h[0]+h[1])/2)/((h[1]-h[0])/2),2))}
+function surfaceAt(x){let best=null;for(const p of world().platforms){if(x>=p[0]&&x<=p[0]+p[2])best=p[1]}for(const h of world().hills){if(x>=h[0]&&x<=h[1]){let y=465-hillY(x,h);if(best===null||y<best)best=y}}return best}
+function drawBackground(){
+ const g=ctx.createLinearGradient(0,0,0,H);
+ if(level===1){g.addColorStop(0,'#25113e');g.addColorStop(1,'#8b3e58')}
+ else if(level===2){g.addColorStop(0,'#092c3b');g.addColorStop(1,'#176b68')}
+ else{g.addColorStop(0,'#130b32');g.addColorStop(1,'#552b82')}ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // moon and stars
+ ctx.fillStyle='#ffe7a1';ctx.beginPath();ctx.arc(790-camera*.08,92,38,0,Math.PI*2);ctx.fill();ctx.fillStyle='#241044';ctx.beginPath();ctx.arc(806-camera*.08,78,34,0,Math.PI*2);ctx.fill();
+ for(let i=0;i<65;i++){let x=((i*137-camera*.18)%(W+100)+W+100)%(W+100),y=25+(i*53)%245;ctx.fillStyle=i%3?'#ffd76b':'#fff1c6';ctx.fillRect(x,y,2+(i%3),2+(i%3))}
+ // distant papel picado
+ for(let i=0;i<12;i++){let x=i*100-(camera*.35%100);ctx.fillStyle=['#ffb52e','#f04470','#3cc7ad','#8d68d6'][i%4];ctx.fillRect(x,0,58,36);ctx.fillStyle='#32143f';ctx.fillRect(x+8,8,8,8);ctx.fillRect(x+30,8,8,8);ctx.fillRect(x+18,23,18,5)}
+ // glowing lantern strings and drifting petals
+ for(let i=0;i<8;i++){let lx=i*145-(camera*.12%145)+45,ly=95+Math.sin(frame*.025+i)*9;
+   ctx.strokeStyle='#d9a56c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,ly-12);ctx.stroke();
+   ctx.fillStyle=i%2?'#ffb52e':'#f45d8b';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=14;ctx.fillRect(lx-7,ly-12,14,22);ctx.shadowBlur=0;
+ }
+ for(let i=0;i<18;i++){let px=((i*83-frame*(.7+i%3)*.25-camera*.08)%(W+30)+W+30)%(W+30),py=(i*47+frame*.45)%(H-80);
+   ctx.save();ctx.translate(px,py);ctx.rotate(frame*.025+i);ctx.fillStyle=i%2?'#ffbd42':'#f26b86';ctx.beginPath();ctx.ellipse(0,0,3,7,.4,0,7);ctx.fill();ctx.restore();
+ }
+ // far cemetery silhouettes
+ for(let i=0;i<14;i++){let x=i*100-(camera*.22%100);ctx.fillStyle='#1a1232';ctx.fillRect(x,315,8,150);ctx.fillRect(x-12,340,32,7);ctx.fillRect(x-5,328,18,7);ctx.beginPath();ctx.arc(x+4,315,10,Math.PI,0);ctx.fill()}
+}
+function drawDecor(x,y){ // tiny flower clusters and candles
+ for(let k=0;k<3;k++){let xx=x+k*24;ctx.fillStyle='#ff9b2f';ctx.beginPath();ctx.arc(xx,y,5,0,7);ctx.fill();ctx.fillStyle='#ffd95e';ctx.beginPath();ctx.arc(xx,y,2,0,7);ctx.fill()}
+ ctx.fillStyle='#f7d8a5';ctx.fillRect(x+8,y+8,7,17);ctx.fillStyle='#ffb12e';ctx.beginPath();ctx.ellipse(x+11.5,y+5,3,7,0,0,7);ctx.fill();
+}
+function drawWorld(){
+ ctx.save();ctx.translate(-camera,0);
+ ctx.fillStyle='#fff0d5';ctx.font='bold 17px Trebuchet MS';
+ ctx.fillText(['WORLD 1 • HAUNTED CEMETERY','WORLD 2 • MARIGOLD FOREST','WORLD 3 • LAND OF THE DEAD'][level-1],camera+24,72);
+ // independent straight platforms
+ for(const p of world().platforms){ctx.fillStyle='#42204c';ctx.fillRect(p[0],p[1],p[2],H-p[1]);ctx.fillStyle='#f3a13b';ctx.fillRect(p[0],p[1],p[2],9);ctx.fillStyle='#e66a55';for(let x=p[0]+8;x<p[0]+p[2]-8;x+=34){ctx.fillRect(x,p[1]+18,16,5)}}
+ // moving platforms that travel vertically; later worlds move faster
+ movingPlatforms.forEach(mp=>{ctx.fillStyle='#45c6ad';ctx.fillRect(mp.x,mp.y,mp.w,13);ctx.fillStyle='#f6d26e';ctx.fillRect(mp.x+8,mp.y-5,mp.w-16,5);});
+ // secret tunnel entrances
+ [level===1?1180:level===2?1520:2460].forEach(tx=>{
+   ctx.fillStyle='#1b0e32';ctx.fillRect(tx,405,54,60);ctx.strokeStyle='#ffbd42';ctx.lineWidth=5;ctx.strokeRect(tx,405,54,60);
+   ctx.fillStyle='#ffdb73';ctx.font='bold 11px Arial';ctx.fillText('SECRET',tx+4,395);
+ });
+ // boss spirit in the forest world
+ if(level===2){let bx=world().end-330,by=320+Math.sin(frame*.07)*18;ctx.fillStyle='#d8fff2';ctx.shadowColor='#7effe3';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(bx,by,47,Math.PI,0);ctx.lineTo(bx+47,by+50);ctx.lineTo(bx+22,by+37);ctx.lineTo(bx,by+52);ctx.lineTo(bx-22,by+37);ctx.lineTo(bx-47,by+50);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#32143f';ctx.fillRect(bx-20,by-7,10,13);ctx.fillRect(bx+10,by-7,10,13);ctx.fillStyle='#ffbd42';ctx.font='bold 14px Arial';ctx.fillText('SPIRIT BOSS',bx-43,by-62);}
+ // parabolic hills, deliberately separated from flat platform sections
+ for(const h of world().hills){ctx.beginPath();ctx.moveTo(h[0],465);for(let x=h[0];x<=h[1];x+=4)ctx.lineTo(x,465-hillY(x,h));ctx.lineTo(h[1],540);ctx.lineTo(h[0],540);ctx.closePath();ctx.fillStyle='#2d8b70';ctx.fill();ctx.strokeStyle='#ffc04b';ctx.lineWidth=6;ctx.beginPath();for(let x=h[0];x<=h[1];x+=4){let y=465-hillY(x,h);if(x===h[0])ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();for(let x=h[0]+15;x<h[1]-5;x+=27){let y=465-hillY(x,h);ctx.fillStyle='#ffbd43';ctx.beginPath();ctx.arc(x,y+18,3,0,7);ctx.fill()}}
+ // flowers
+ world().flowers.forEach((f,i)=>{let key=level+'-'+i;if(collected.has(key))return;let bob=Math.sin(frame*.09+i)*5;let x=f[0],y=f[1]+bob;ctx.fillStyle='#ffad24';for(let a=0;a<8;a++){let ang=a*Math.PI/4;ctx.beginPath();ctx.ellipse(x+Math.cos(ang)*8,y+Math.sin(ang)*8,5,8,ang,0,7);ctx.fill()}ctx.fillStyle='#ffe56d';ctx.beginPath();ctx.arc(x,y,5,0,7);ctx.fill();ctx.fillStyle='#2c9b67';ctx.fillRect(x-2,y+10,4,10)});
+ // spirit hazards
+ world().hazards.forEach((h,i)=>{let x=h[0]+Math.sin(frame*.045+i*2)*22,y=h[1]+Math.sin(frame*.08+i)*9;ctx.fillStyle='#b5f4e5';ctx.beginPath();ctx.arc(x,y,14,Math.PI,0);ctx.lineTo(x+14,y+14);ctx.lineTo(x+7,y+9);ctx.lineTo(x,y+15);ctx.lineTo(x-7,y+9);ctx.lineTo(x-14,y+14);ctx.closePath();ctx.fill();ctx.fillStyle='#32143f';ctx.fillRect(x-6,y-2,3,5);ctx.fillRect(x+4,y-2,3,5)});
+ // decorations along route: flower pots, papel-picado flags, tiny gravestones and candles
+ for(let x=120;x<world().end;x+=260){drawDecor(x, surfaceAt(x)||465)}
+ for(let x=190;x<world().end;x+=390){
+   let sy=surfaceAt(x)||465;
+   // little decorated gravestone
+   ctx.fillStyle='#b8a0c8';ctx.fillRect(x+42,sy-34,22,34);
+   ctx.beginPath();ctx.arc(x+53,sy-34,11,Math.PI,0);ctx.fill();
+   ctx.fillStyle='#ffbd42';ctx.font='bold 13px Arial';ctx.fillText('✦',x+48,sy-15);
+   // hanging mini papel picado
+   ctx.strokeStyle='#f6d68b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+75,sy-88);ctx.lineTo(x+135,sy-88);ctx.stroke();
+   for(let j=0;j<3;j++){ctx.fillStyle=['#ff547d','#39c8a5','#ffbd42'][j];ctx.fillRect(x+78+j*20,sy-86,16,20);ctx.fillStyle='#32143f';ctx.fillRect(x+83+j*20,sy-80,6,6)}
+   // extra marigold patch
+   for(let j=0;j<4;j++){let fx=x+145+j*10;ctx.fillStyle='#ff9d24';ctx.beginPath();ctx.arc(fx,sy-8-(j%2)*3,5,0,7);ctx.fill();ctx.fillStyle='#ffd95e';ctx.beginPath();ctx.arc(fx,sy-8-(j%2)*3,2,0,7);ctx.fill()}
+ }
+ // special golden marigold: collect it for five bonus flowers
+ let gx=[1680,2180,3010][level-1],gkey='gold-'+level;
+ if(!collected.has(gkey)){
+   let gy=345+Math.sin(frame*.08)*6;
+   ctx.save();ctx.shadowColor='#ffe66b';ctx.shadowBlur=20;
+   for(let a=0;a<12;a++){let ang=a*Math.PI/6;ctx.fillStyle=a%2?'#ff9d24':'#ffe66b';ctx.beginPath();ctx.ellipse(gx+Math.cos(ang)*13,gy+Math.sin(ang)*13,6,11,ang,0,Math.PI*2);ctx.fill()}
+   ctx.fillStyle='#fff4b0';ctx.beginPath();ctx.arc(gx,gy,7,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+   ctx.fillStyle='#fff1a8';ctx.font='bold 12px Arial';ctx.fillText('+5',gx-8,gy-25);ctx.restore();
+ }
+ // final heart
+ if(level===3){let x=world().end-110,y=350+Math.sin(frame*.05)*8;ctx.fillStyle='#ff4d83';ctx.font='90px Arial';ctx.fillText('♥',x,y);ctx.fillStyle='#ffe4a5';ctx.font='bold 16px Arial';ctx.fillText('HEART OF REMEMBRANCE',x-80,y+32)}
+ ctx.restore();
+}
+function drawSkeleton(){
+ let x=player.x-camera,y=player.y;ctx.save();ctx.translate(x,y);
+ if(player.inv>0&&Math.floor(frame/5)%2===0)ctx.globalAlpha=.45;
+ // legs and shoes
+ ctx.strokeStyle='#fff0d5';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(10,31);ctx.lineTo(7,42);ctx.moveTo(21,31);ctx.lineTo(24,42);ctx.stroke();
+ ctx.fillStyle='#5b234e';ctx.fillRect(0,40,13,5);ctx.fillRect(19,40,13,5);
+ // rib cage
+ ctx.strokeStyle='#fff0d5';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(5,14);ctx.lineTo(5,29);ctx.moveTo(25,14);ctx.lineTo(25,29);for(let yy=17;yy<=28;yy+=4){ctx.moveTo(5,yy);ctx.quadraticCurveTo(15,yy+5,25,yy)}ctx.stroke();
+ // arms
+ ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(5,17);ctx.lineTo(-2,27);ctx.moveTo(25,17);ctx.lineTo(32,26);ctx.stroke();
+ // skull
+ ctx.fillStyle='#fff0d5';ctx.beginPath();ctx.arc(15,8,13,0,Math.PI*2);ctx.fill();ctx.fillRect(7,13,16,8);
+ ctx.fillStyle='#251238';ctx.beginPath();ctx.arc(10,8,3.5,0,7);ctx.arc(20,8,3.5,0,7);ctx.fill();ctx.fillRect(13,13,4,3);
+ ctx.fillStyle='#fff0d5';for(let a=0;a<4;a++)ctx.fillRect(9+a*4,18,2,4);
+ // costume details vary with the selected hero
+ if(selectedCharacter==='mariachi'){ctx.fillStyle='#2a183d';ctx.fillRect(3,19,24,7);ctx.fillStyle='#ffbd42';ctx.fillRect(2,24,26,3);ctx.fillStyle='#f04d76';ctx.beginPath();ctx.arc(15,-7,13,Math.PI,0);ctx.fill();ctx.fillRect(3,-7,24,3)}
+ else if(selectedCharacter==='alebrije'){ctx.fillStyle='#4fd6b0';ctx.fillRect(3,18,24,10);ctx.fillStyle='#ffbd42';for(let q=0;q<3;q++){ctx.beginPath();ctx.arc(7+q*8,22,3,0,7);ctx.fill()}}
+ else if(selectedCharacter==='friend'){ctx.fillStyle='#f04d76';ctx.fillRect(3,18,24,10);ctx.fillStyle='#ffbd42';ctx.beginPath();ctx.arc(15,-6,9,0,7);ctx.fill()}
+ // flower crown
+ for(let a=0;a<5;a++){let fx=5+a*5;ctx.fillStyle=a%2?'#ffbd42':'#f04d76';ctx.beginPath();ctx.arc(fx,-5-(a%2)*2,3,0,7);ctx.fill()}
+ ctx.restore();
+}
+function loseLife(){if(player.inv>0)return;lives--;updateHud();if(lives<=0){playing=false;showEnd('¡AY, CARAMBA!','The spirits got you this time. Your marigolds are waiting. Try the adventure again!','TRY AGAIN',newGame)}else{resetPlayer()}}
+function showEnd(title,msg,btn,fn){overlay.style.display='flex';overlay.innerHTML=`<div class="panel"><h2>${title}</h2><p>${msg}</p><button class="restart" id="again">${btn}</button></div>`;document.getElementById('again').onclick=fn}
+function update(){
+ if(!playing)return;
+ frame++;
+ if(player.inv>0)player.inv--;
+ let dir=(keys.arrowright||keys.d||touch.right?1:0)-(keys.arrowleft||keys.a||touch.left?1:0);
+ let speed=4.2+(level-1)*.45;
+ if(dashTimer>0){speed=selectedCharacter==='mariachi'?11:9;dashTimer--}
+ if(dashCooldown>0)dashCooldown--;
+ player.vx=dir*speed;
+ player.x+=player.vx;
+ player.vy+=.58;
+ player.y+=player.vy;
+ let feet=player.y+player.h,landed=false;
+ movingPlatforms.forEach(mp=>{mp.y=mp.baseY+Math.sin(frame*.035+mp.phase)*(level===3?62:level===2?48:32);
+   if(player.x+player.w>mp.x&&player.x<mp.x+mp.w&&player.vy>=0&&feet>=mp.y&&feet-player.vy<=mp.y+12){player.y=mp.y-player.h;player.vy=0;landed=true}
+ });
+ for(const p of world().platforms){
+   if(player.x+player.w>p[0]&&player.x<p[0]+p[2]&&player.vy>=0&&feet>=p[1]&&feet-player.vy<=p[1]+10){
+     player.y=p[1]-player.h;player.vy=0;landed=true;
+   }
+ }
+ for(const h of world().hills){
+   let mid=player.x+player.w/2;
+   if(mid>=h[0]&&mid<=h[1]){
+     let sy=465-hillY(mid,h);
+     if(player.vy>=0&&feet>=sy&&feet-player.vy<=sy+12){player.y=sy-player.h;player.vy=0;landed=true}
+   }
+ }
+ if(landed){player.on=true;player.jumps=0}else player.on=false;
+ if(player.y>H+90)loseLife();
+
+ // Collect marigolds.
+ world().flowers.forEach((f,i)=>{
+   let key=level+'-'+i;
+   if(!collected.has(key)&&Math.abs(player.x+15-f[0])<27&&Math.abs(player.y+20-f[1])<32){
+     collected.add(key);flowers++;updateHud();
+   }
+ });
+
+ // Golden marigold bonus blooms appear in every world and are worth five flowers.
+ let goldX=[1680,2180,3010][level-1],goldKey='gold-'+level;
+ if(!collected.has(goldKey)&&Math.abs(player.x-goldX)<24&&Math.abs(player.y-340)<90){collected.add(goldKey);flowers+=5;updateHud()}
+ // Hidden tunnel: enter its arch to skip ahead and earn a bonus.
+ let tunnelX=level===1?1180:level===2?1520:2460;
+ if(Math.abs(player.x-tunnelX)<22&&player.y>365){player.x=Math.min(world().end-250,tunnelX+390);player.inv=100;flowers+=2;updateHud()}
+ // Boss battle in the marigold forest: jump over its sweeping spirit wave three times.
+ if(level===2&&boss.active){
+   let bx=world().end-330;
+   if(player.x>bx-310&&player.x<bx+75){
+     boss.shot++;
+     if(boss.shot%105===0)falling.push({x:W-130,y:370,vy:5.2,spin:0,kind:1});
+     if(player.y<250&&boss.hp>0){boss.hp--;player.vy=-7;boss.active=false;setTimeout(()=>{boss.active=true},700)}
+     if(Math.abs(player.x-bx)<35&&player.y>280&&player.inv<=0){loseLife()}
+   }
+ }
+ // A ghost visibly follows just behind the player. It closes in if the player slows down.
+ chaser.x += (player.x-155-chaser.x)*.018 + .65;
+ if(chaser.x>player.x-35&&player.inv<=0){loseLife();chaser.x=player.x-230}
+
+ // Spawn frequent falling skulls and hot candle embers in screen space.
+ if(frame%(level===1?82:level===2?66:50)===0){
+   falling.push({x:35+Math.random()*(W-70),y:-28,vy:3.2+Math.random()*1.8+level*.45,spin:0,kind:Math.floor(Math.random()*2)});
+ }
+ falling.forEach(o=>{
+   o.y+=o.vy;o.spin+=.055;
+   let px=player.x-camera+15, py=player.y+22;
+   if(Math.abs(px-o.x)<22&&Math.abs(py-o.y)<25&&player.inv<=0){
+     loseLife();o.y=H+60;
+   }
+ });
+ falling=falling.filter(o=>o.y<H+30);
+
+ // Patrol spirits along the platforms.
+ world().hazards.forEach((h,i)=>{
+   let hx=h[0]+Math.sin(frame*.045+i*2)*22,hy=h[1]+Math.sin(frame*.08+i)*9;
+   if(Math.abs(player.x+15-hx)<25&&Math.abs(player.y+22-hy)<28)loseLife();
+ });
+
+ player.x=Math.max(0,Math.min(world().end-15,player.x));
+ camera=Math.max(0,Math.min(world().end-W,player.x-W*.38));
+ if(player.x>world().end-90){
+   if(level<3){level++;resetPlayer();initLevel();updateHud()}
+   else if(!won){won=true;playing=false;showEnd('❤️ THE HEART REMEMBERS ❤️',`You reached the Heart of Remembrance with ${flowers} marigolds! The petals swirl, lanterns glow, and the whole Land of the Dead celebrates. Those we love never truly leave us. ¡Feliz Día de los Muertos!`,'PLAY AGAIN',newGame)}
+ }
+}
+function drawThreats(){
+ if(!playing)return;
+ // Large, unmistakable chasing ghost shown behind the skeleton on screen.
+ let gx=player.x-camera-118, gy=Math.min(440,player.y+18)+Math.sin(frame*.13)*7;
+ ctx.save();
+ ctx.fillStyle='#b8fff0';ctx.shadowColor='#74ffe3';ctx.shadowBlur=18;
+ ctx.beginPath();ctx.arc(gx,gy,23,Math.PI,0);ctx.lineTo(gx+23,gy+26);ctx.lineTo(gx+11,gy+19);ctx.lineTo(gx,gy+27);ctx.lineTo(gx-11,gy+19);ctx.lineTo(gx-23,gy+26);ctx.closePath();ctx.fill();
+ ctx.shadowBlur=0;ctx.fillStyle='#28123b';ctx.fillRect(gx-10,gy-3,6,8);ctx.fillRect(gx+5,gy-3,6,8);
+ ctx.fillStyle='#ffdf7a';ctx.font='bold 12px Arial';ctx.fillText('CHASE!',gx-21,gy-32);
+ ctx.restore();
+ // Falling hazards are drawn in screen space, so they always appear in the visible sky.
+ falling.forEach(o=>{
+   ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.spin);
+   if(o.kind===0){
+     ctx.fillStyle='#fff0d5';ctx.strokeStyle='#ff5b79';ctx.lineWidth=3;
+     ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.stroke();
+     ctx.fillStyle='#32143f';ctx.beginPath();ctx.arc(-5,-2,3,0,7);ctx.arc(5,-2,3,0,7);ctx.fill();
+     ctx.fillStyle='#ffbd42';ctx.fillRect(-3,7,6,3);
+   }else{
+     ctx.fillStyle='#ff9c32';ctx.strokeStyle='#ffdf78';ctx.lineWidth=3;
+     ctx.beginPath();ctx.moveTo(0,-17);ctx.lineTo(14,12);ctx.lineTo(-14,12);ctx.closePath();ctx.fill();ctx.stroke();
+   }
+   ctx.restore();
+ });
+}
+function draw(){drawBackground();drawWorld();drawThreats();drawSkeleton();if(playing){ctx.fillStyle='#fff0d5';ctx.font='bold 15px Trebuchet MS';ctx.fillText(['THE HAUNTED CEMETERY','THE MARIGOLD FOREST','THE LAND OF THE DEAD'][level-1]+'  •  WATCH THE SKY!',20,515);
+ ctx.fillStyle='#ffe7b0';ctx.font='bold 13px Arial';ctx.fillText('DASH '+(dashCooldown>0?'RECHARGING':'READY')+'  •  HERO: '+characterNames[selectedCharacter],W-310,515);
+ if(level===2){ctx.fillStyle='#fff';ctx.fillText('SPIRIT BOSS: '+boss.hp+' hearts',W-190,92)}}}
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+})();
+</script>
+</body></html>
